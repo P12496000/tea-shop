@@ -316,6 +316,22 @@ body.theme-amber select{background:#180C00 !important;color:#FFE8C8 !important;b
 <div id="page-line" class="page">
   <div style="height:14px"></div>
 
+  <!-- 雲端同步狀態卡 -->
+  <div class="card" style="border-left:4px solid #4A90D9">
+    <div class="section-title">☁️ Firebase 雲端同步</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+      <div id="sync-dot" style="width:12px;height:12px;border-radius:50%;background:#ccc;flex-shrink:0"></div>
+      <div>
+        <div id="sync-status" style="font-size:13px;font-weight:700;color:var(--text)">連線中...</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">所有裝置即時同步，資料永久保存</div>
+      </div>
+      <button onclick="forceSyncToCloud()" style="margin-left:auto;padding:8px 14px;border-radius:12px;border:1.5px solid #4A90D9;background:transparent;color:#4A90D9;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📤 立即同步</button>
+    </div>
+    <div style="font-size:10px;color:var(--text2);padding-top:8px;border-top:1px solid var(--border)">
+      專案：family-budget-892c4 · 位置：新加坡
+    </div>
+  </div>
+
   <!-- LINE Notify 設定卡 -->
   <div class="card">
     <div class="section-title">💬 LINE 官方帳號廣播設定</div>
@@ -464,10 +480,79 @@ body.theme-amber select{background:#180C00 !important;color:#FFE8C8 !important;b
   <button class="nav-btn" onclick="goPage('line',this)"><span class="nav-icon">💬</span>通知</button>
 </nav>
 
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD3Y3Wg9O8ZyCPjNm8_QCcL8HIpBAUmWJU",
+    authDomain: "family-budget-892c4.firebaseapp.com",
+    databaseURL: "https://family-budget-892c4-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "family-budget-892c4",
+    storageBucket: "family-budget-892c4.firebasestorage.app",
+    messagingSenderId: "480730099457",
+    appId: "1:480730099457:web:9af4dda47afd4a4352f500"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // 把 Firebase 功能掛到 window，讓主 script 存取
+  window._fbDb = db;
+  window._fbRef = ref;
+  window._fbSet = set;
+  window._fbOnValue = onValue;
+  window._fbGet = get;
+
+  // Firebase 載入完成後初始化
+  window._fbReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
 <script>
 const NOW=new Date(),M=NOW.getMonth(),Y=NOW.getFullYear();
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+// ── 本地儲存 ──
+function save(k,v){
+  try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}
+  // 同步到 Firebase（只同步核心資料）
+  const syncKeys=['cute_expenses','cute_cards','cute_members','cute_budgets','cute_total_budget'];
+  if(syncKeys.includes(k) && window._fbDb){
+    try{
+      window._fbSet(window._fbRef(window._fbDb,'family/'+k), v);
+    }catch(e){}
+  }
+}
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+
+// ── Firebase 即時同步 ──
+function initFirebaseSync(){
+  if(!window._fbDb) return;
+  const syncKeys=['cute_expenses','cute_cards','cute_members','cute_budgets','cute_total_budget'];
+  syncKeys.forEach(k=>{
+    window._fbOnValue(window._fbRef(window._fbDb,'family/'+k), snapshot=>{
+      const data=snapshot.val();
+      if(data===null||data===undefined) return;
+      // 比較是否與本地不同
+      const local=load(k,null);
+      const remoteStr=JSON.stringify(data), localStr=JSON.stringify(local);
+      if(remoteStr===localStr) return;
+      // 更新本地
+      try{localStorage.setItem(k,JSON.stringify(data))}catch(e){}
+      // 更新記憶體變數
+      if(k==='cute_expenses'){expenses=data;renderAll();}
+      else if(k==='cute_cards'){cards=data;renderAll();}
+      else if(k==='cute_members'){members=data;renderAll();}
+      else if(k==='cute_budgets'){budgets=data;renderAll();}
+      else if(k==='cute_total_budget'){totalBudgetOverride=data;renderAll();}
+    });
+  });
+  showToast('☁️ 已連線雲端同步');
+}
+
+// 等 Firebase 模組載入後啟動同步
+document.addEventListener('firebase-ready', ()=>{
+  setTimeout(initFirebaseSync, 500);
+});
 function fmt(n){return'NT$'+Math.round(n).toLocaleString()}
 function todayStr(){return Y+'-'+String(M+1).padStart(2,'0')+'-'+String(NOW.getDate()).padStart(2,'0')}
 
@@ -922,6 +1007,40 @@ function adjustHeaderHeight(delta){
   applyHeaderHeight();
   showToast('↕️ 高度 ' + headerHeight + 'px');
 }
+// ── FIREBASE SYNC UI ──
+function updateSyncDot(ok){
+  const dot=document.getElementById('sync-dot');
+  const status=document.getElementById('sync-status');
+  if(dot) dot.style.background=ok?'#27AE60':'#E05A8A';
+  if(status) status.textContent=ok?'✅ 已連線，即時同步中':'❌ 離線，資料儲存於本機';
+}
+
+function forceSyncToCloud(){
+  if(!window._fbDb){updateSyncDot(false);showToast('❌ Firebase 未連線');return;}
+  const data={
+    cute_expenses: expenses,
+    cute_cards: cards,
+    cute_members: members,
+    cute_budgets: budgets,
+    cute_total_budget: totalBudgetOverride
+  };
+  let count=0;
+  Object.entries(data).forEach(([k,v])=>{
+    if(v!==null&&v!==undefined){
+      try{
+        window._fbSet(window._fbRef(window._fbDb,'family/'+k), v);
+        count++;
+      }catch(e){}
+    }
+  });
+  showToast('☁️ 已同步 '+count+' 項資料到雲端！');
+  updateSyncDot(true);
+}
+
+document.addEventListener('firebase-ready', ()=>{
+  updateSyncDot(true);
+});
+
 // ── LINE NOTIFY ──
 let lineSettings = load('cute_line_settings', {
   enabled: false,
