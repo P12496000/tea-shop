@@ -1093,22 +1093,28 @@ function saveLineSettings(showMsg) {
   if (showMsg) showToast('✅ LINE 設定已儲存');
 }
 
-async function sendLineNotify(message) {
-  saveLineSettings();
-  if (!lineSettings.enabled || !lineSettings.token) return false;
+const GAS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbyM83FlWdf2nB0NdbLE7_Chf9963b-eiBv3ioJU3qs7SvF95WhaPvMnB-SK4hRs7ncD/exec';
+
+async function sendLineData(data) {
+  if (!lineSettings.enabled) return false;
   try {
-    const res = await fetch('https://api.line.me/v2/bot/message/broadcast', {
+    await fetch(GAS_WEBHOOK, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + lineSettings.token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ type: 'text', text: message }] })
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-    const ok = res.status === 200;
-    addLineLog(ok ? '✅' : '❌', message, ok ? '成功' : ('失敗 ' + res.status));
-    return ok;
-  } catch (e) {
-    addLineLog('❌', message, '網路錯誤');
+    addLineLog('✅', JSON.stringify(data).slice(0,60), '已送出');
+    return true;
+  } catch(e) {
+    addLineLog('❌', JSON.stringify(data).slice(0,60), '失敗：' + e.message);
     return false;
   }
+}
+
+async function sendLineNotify(message) {
+  if (!lineSettings.enabled) return false;
+  return await sendLineData({ type: 'test', message });
 }
 
 function addLineLog(status, msg, result) {
@@ -1134,12 +1140,20 @@ function renderLineLog() {
 }
 
 async function sendLineTest() {
-  saveLineSettings();
-  if (!lineSettings.token) { showToast('⚠️ 請先輸入 Token'); return; }
-  const group = lineSettings.groupName || '家庭群組';
   showToast('📤 發送測試中…');
-  const ok = await sendLineNotify(`\n🏠 家庭記帳本測試通知\n群組：${group}\n時間：${new Date().toLocaleString('zh-TW')}\n✅ 通知設定成功！`);
-  showToast(ok ? '✅ 測試通知已送出！' : '❌ 發送失敗，請確認 Token');
+  try {
+    await fetch(GAS_WEBHOOK, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'test' })
+    });
+    addLineLog('✅', '測試通知', '已送出');
+    showToast('✅ 測試通知已送出！請確認 LINE');
+  } catch(e) {
+    addLineLog('❌', '測試通知', '失敗：' + e.message);
+    showToast('❌ 發送失敗');
+  }
 }
 
 // LINE 通知觸發函式（各功能呼叫）
