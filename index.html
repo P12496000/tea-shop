@@ -318,57 +318,50 @@ body.theme-amber select{background:#180C00 !important;color:#FFE8C8 !important;b
 
   <!-- 雲端同步狀態卡 -->
   <div class="card" style="border-left:4px solid #4A90D9">
-    <div class="section-title">☁️ Firebase 雲端同步</div>
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
-      <div id="sync-dot" style="width:12px;height:12px;border-radius:50%;background:#ccc;flex-shrink:0"></div>
-      <div>
-        <div id="sync-status" style="font-size:13px;font-weight:700;color:var(--text)">連線中...</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px">所有裝置即時同步，資料永久保存</div>
-      </div>
-      <button onclick="forceSyncToCloud()" style="margin-left:auto;padding:8px 14px;border-radius:12px;border:1.5px solid #4A90D9;background:transparent;color:#4A90D9;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📤 立即同步</button>
-    </div>
-    <div style="font-size:10px;color:var(--text2);padding-top:8px;border-top:1px solid var(--border)">
-      專案：family-budget-892c4 · 位置：新加坡
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="sync-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0"></div>
+      <div id="sync-status" style="font-size:12px;font-weight:700;color:var(--text2)">連線中...</div>
+      <button onclick="forceSyncToCloud()" style="margin-left:auto;padding:6px 12px;border-radius:10px;border:1.5px solid #4A90D9;background:transparent;color:#4A90D9;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">☁️ 立即同步</button>
     </div>
   </div>
 
-  <!-- LINE Notify 設定卡 -->
+  <!-- LINE 通知設定卡 -->
   <div class="card">
-    <div class="section-title">💬 LINE 官方帳號廣播設定</div>
+    <div class="section-title">💬 LINE 通知設定</div>
 
     <!-- 通知開關 -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
       <div>
         <div style="font-size:14px;font-weight:800;color:var(--text)">🔔 啟用 LINE 通知</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px">記帳、信用卡到期自動推送至群組</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">記帳、信用卡到期自動推送</div>
       </div>
       <div id="line-toggle-wrap" onclick="toggleLineNotify()" style="cursor:pointer;width:52px;height:28px;border-radius:14px;background:#ccc;position:relative;transition:background .25s;flex-shrink:0">
         <div id="line-toggle-knob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:white;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:left .25s"></div>
       </div>
     </div>
 
-    <!-- Token 輸入 -->
-    <div style="padding:14px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">🔑 Channel Access Token</div>
-      <div style="display:flex;gap:8px">
-        <input id="line-token-input" type="password" placeholder="貼上 Channel Access Token"
-          style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
-        <button onclick="toggleTokenView()" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;background:transparent;color:var(--text2);font-size:14px;cursor:pointer">👁️</button>
+    <!-- 推送對象 -->
+    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">📨 推送對象</div>
+      <div style="display:flex;gap:10px">
+        <button id="notify-target-broadcast" onclick="setNotifyTarget('broadcast')"
+          style="flex:1;padding:10px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">
+          📢 群組廣播<div style="font-size:10px;font-weight:500;margin-top:3px;opacity:0.7">推送給所有好友</div>
+        </button>
+        <button id="notify-target-personal" onclick="setNotifyTarget('personal')"
+          style="flex:1;padding:10px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">
+          👤 個人通知<div style="font-size:10px;font-weight:500;margin-top:3px;opacity:0.7">推送給指定成員</div>
+        </button>
       </div>
-      <div style="font-size:10px;color:var(--text2);margin-top:6px">
-        從 LINE Developers Console → Messaging API 取得 Channel access token
+      <!-- 個人通知目標（只在個人模式顯示）-->
+      <div id="personal-target-wrap" style="display:none;margin-top:10px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:6px">選擇要通知的成員：</div>
+        <div id="personal-member-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
     </div>
 
-    <!-- 群組顯示名稱 -->
-    <div style="padding:14px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">👥 群組名稱（顯示用）</div>
-      <input id="line-group-name" placeholder="例：家庭帳務群" maxlength="30"
-        style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none">
-    </div>
-
-    <!-- 通知項目選擇 -->
-    <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+    <!-- 通知項目 -->
+    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">📋 通知項目</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
@@ -381,7 +374,7 @@ body.theme-amber select{background:#180C00 !important;color:#FFE8C8 !important;b
         </label>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
           <input type="checkbox" id="notify-summary" onchange="saveLineSettings()" style="width:18px;height:18px;accent-color:var(--pink)">
-          <div><div style="font-size:13px;font-weight:700;color:var(--text)">📊 每日支出摘要</div><div style="font-size:10px;color:var(--text2)">每天晚上 9 點推送當日統計</div></div>
+          <div><div style="font-size:13px;font-weight:700;color:var(--text)">📊 每日支出摘要</div><div style="font-size:10px;color:var(--text2)">每天晚上 9 點推送統計</div></div>
         </label>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
           <input type="checkbox" id="notify-split" onchange="saveLineSettings()" style="width:18px;height:18px;accent-color:var(--pink)">
@@ -390,36 +383,9 @@ body.theme-amber select{background:#180C00 !important;color:#FFE8C8 !important;b
       </div>
     </div>
 
-    <!-- 儲存與測試 -->
-    <div style="padding:14px 0 0;display:flex;gap:10px">
-      <button onclick="saveLineSettings(true)" style="flex:1;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#06C755,#04A344);color:white;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">💾 儲存設定</button>
-      <button onclick="sendLineTest()" style="flex:1;padding:12px;border-radius:14px;border:1.5px solid #06C755;background:transparent;color:#06C755;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">📤 測試通知</button>
-    </div>
-  </div>
-
-  <!-- 如何取得 Token 教學 -->
-  <div class="card">
-    <div class="section-title">📖 如何設定 LINE 通知</div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#06C755,#04A344);color:white;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">開啟 LINE Developers Console</div><div style="font-size:11px;color:var(--text2);margin-top:2px">前往 developers.line.biz 並登入帳號</div></div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#06C755,#04A344);color:white;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">進入 Messaging API 分頁</div><div style="font-size:11px;color:var(--text2);margin-top:2px">點選你的 Channel → 上方 Messaging API 分頁</div></div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#06C755,#04A344);color:white;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">產生並複製 Token</div><div style="font-size:11px;color:var(--text2);margin-top:2px">拉到底部 Channel access token → 點 Issue → 複製</div></div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#06C755,#04A344);color:white;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">儲存並測試</div><div style="font-size:11px;color:var(--text2);margin-top:2px">按「測試通知」確認訊息有成功送出</div></div>
-      </div>
-    </div>
-    <div style="margin-top:14px;padding:10px 14px;border-radius:12px;background:rgba(6,199,85,0.08);border:1px solid rgba(6,199,85,0.2)">
-      <div style="font-size:11px;color:#06C755;font-weight:700">⚠️ 注意：通知會廣播給所有加入官方帳號的好友。Token 請妥善保存，以密碼形式儲存。</div>
+    <!-- 測試按鈕 -->
+    <div style="padding:12px 0 0">
+      <button onclick="sendLineTest()" style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#06C755,#04A344);color:white;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">📤 發送測試通知</button>
     </div>
   </div>
 
@@ -1046,6 +1012,8 @@ let lineSettings = load('cute_line_settings', {
   enabled: false,
   token: 'oOWLDuBPxEWRD4wZ8WRXLmGT5UocMFfXh/7To+7a7aOcymjyC+zofHMaQWxOtL9ku7paEnDgeEA6d3XKdlluPuibDoui9aG3b9CpuCEaShlUmVeogFDyEsuvkhC5SizffO62GXagEV0PGxQIqivABgdB04t89/1O/w1cDnyilFU=',
   groupName: '家庭通知記事本',
+  notifyTarget: 'broadcast',
+  personalMembers: [],
   notifyExpense: true,
   notifyCard: true,
   notifySummary: false,
@@ -1055,16 +1023,48 @@ let lineSettings = load('cute_line_settings', {
 function initLineUI() {
   const wrap = document.getElementById('line-toggle-wrap');
   const knob = document.getElementById('line-toggle-knob');
-  const tokenInput = document.getElementById('line-token-input');
-  const groupName = document.getElementById('line-group-name');
   if (!wrap) return;
   const on = lineSettings.enabled;
   wrap.style.background = on ? '#06C755' : '#555';
   knob.style.left = on ? '27px' : '3px';
-  if (tokenInput) tokenInput.value = lineSettings.token || '';
-  if (groupName) groupName.value = lineSettings.groupName || '';
   const checks = { 'notify-expense': lineSettings.notifyExpense, 'notify-card': lineSettings.notifyCard, 'notify-summary': lineSettings.notifySummary, 'notify-split': lineSettings.notifySplit };
   Object.entries(checks).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.checked = !!val; });
+  // Update target buttons
+  const target = lineSettings.notifyTarget || 'broadcast';
+  const btnB = document.getElementById('notify-target-broadcast');
+  const btnP = document.getElementById('notify-target-personal');
+  if (btnB && btnP) {
+    const activeStyle = 'border-color:#06C755;background:rgba(6,199,85,0.1);color:#06C755;';
+    const inactiveStyle = 'border-color:var(--border);background:var(--card);color:var(--text2);';
+    btnB.style.cssText = btnB.style.cssText + (target==='broadcast' ? activeStyle : inactiveStyle);
+    btnP.style.cssText = btnP.style.cssText + (target==='personal' ? activeStyle : inactiveStyle);
+  }
+  const personalWrap = document.getElementById('personal-target-wrap');
+  if (personalWrap) personalWrap.style.display = target==='personal' ? 'block' : 'none';
+  // Render personal member chips
+  const memberList = document.getElementById('personal-member-list');
+  if (memberList && target==='personal') {
+    const selected = lineSettings.personalMembers || [];
+    memberList.innerHTML = members.filter(m=>m.name!=='共同').map(m=>{
+      const isOn = selected.includes(m.name);
+      return `<button onclick="togglePersonalMember('${m.name}')" style="padding:6px 14px;border-radius:20px;border:2px solid ${isOn?m.color:'var(--border)'};background:${isOn?m.color+'22':'transparent'};color:${isOn?m.color:'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">${m.name}</button>`;
+    }).join('');
+  }
+}
+
+function setNotifyTarget(target) {
+  lineSettings.notifyTarget = target;
+  save('cute_line_settings', lineSettings);
+  initLineUI();
+}
+
+function togglePersonalMember(name) {
+  if (!lineSettings.personalMembers) lineSettings.personalMembers = [];
+  const idx = lineSettings.personalMembers.indexOf(name);
+  if (idx >= 0) lineSettings.personalMembers.splice(idx, 1);
+  else lineSettings.personalMembers.push(name);
+  save('cute_line_settings', lineSettings);
+  initLineUI();
 }
 
 function toggleLineNotify() {
@@ -1074,17 +1074,9 @@ function toggleLineNotify() {
   showToast(lineSettings.enabled ? '🟢 LINE 通知已開啟' : '⭕ LINE 通知已關閉');
 }
 
-function toggleTokenView() {
-  const inp = document.getElementById('line-token-input');
-  if (!inp) return;
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
+function toggleTokenView() { /* token field removed */ }
 
 function saveLineSettings(showMsg) {
-  const tokenInput = document.getElementById('line-token-input');
-  const groupName = document.getElementById('line-group-name');
-  lineSettings.token = tokenInput ? tokenInput.value.trim() : lineSettings.token;
-  lineSettings.groupName = groupName ? groupName.value.trim() : lineSettings.groupName;
   lineSettings.notifyExpense = document.getElementById('notify-expense')?.checked ?? lineSettings.notifyExpense;
   lineSettings.notifyCard = document.getElementById('notify-card')?.checked ?? lineSettings.notifyCard;
   lineSettings.notifySummary = document.getElementById('notify-summary')?.checked ?? lineSettings.notifySummary;
@@ -1097,17 +1089,20 @@ const GAS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbyM83FlWdf2nB0NdbLE
 
 async function sendLineData(data) {
   if (!lineSettings.enabled) return false;
+  const target = lineSettings.notifyTarget || 'broadcast';
+  const payload = { ...data, target, personalMembers: lineSettings.personalMembers || [] };
   try {
     await fetch(GAS_WEBHOOK, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(payload)
     });
-    addLineLog('✅', JSON.stringify(data).slice(0,60), '已送出');
+    const label = target==='personal' ? '個人通知' : '群組廣播';
+    addLineLog('✅', (data.name||data.type||'通知')+' → '+label, '已送出');
     return true;
   } catch(e) {
-    addLineLog('❌', JSON.stringify(data).slice(0,60), '失敗：' + e.message);
+    addLineLog('❌', JSON.stringify(data).slice(0,40), '失敗：' + e.message);
     return false;
   }
 }
