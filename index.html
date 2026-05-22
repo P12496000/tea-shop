@@ -1145,15 +1145,25 @@ async function sendLineTest() {
 // LINE 通知觸發函式（各功能呼叫）
 async function lineNotifyExpense(exp) {
   if (!lineSettings.enabled || !lineSettings.notifyExpense) return;
-  const group = lineSettings.groupName || '家庭';
-  await sendLineNotify(`\n💸 ${group} 新增支出\n項目：${exp.name}\n分類：${exp.cat.replace(/[^\u4e00-\u9fa5a-zA-Z]/g,'')}\n金額：${fmt(exp.amount)}\n成員：${exp.person}\n日期：${exp.date}`);
+  await sendLineData({
+    type: 'expense',
+    name: exp.name,
+    amount: exp.amount,
+    cat: exp.cat,
+    person: exp.person,
+    date: exp.date
+  });
 }
 
 async function lineNotifyCardDue(card, days) {
   if (!lineSettings.enabled || !lineSettings.notifyCard) return;
-  const group = lineSettings.groupName || '家庭';
-  const when = days === 0 ? '今天到期！' : `還有 ${days} 天到期`;
-  await sendLineNotify(`\n⚠️ ${group} 信用卡繳款提醒\n${card.bank} ${card.name}（${card.holder}）\n🗓️ ${when}\n💰 應繳金額：${fmt(card.bill)}`);
+  await sendLineData({
+    type: 'card',
+    bank: card.bank,
+    name: card.name,
+    bill: card.bill,
+    days: days
+  });
 }
 
 async function lineNotifySummary() {
