@@ -343,20 +343,23 @@ body.theme-amber select{background:#180C00 !important;color:#FFE8C8 !important;b
     <!-- 推送對象 -->
     <div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">📨 推送對象</div>
-      <div style="display:flex;gap:10px">
+      <div style="display:flex;gap:10px;margin-bottom:10px">
         <button id="notify-target-broadcast" onclick="setNotifyTarget('broadcast')"
           style="flex:1;padding:10px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">
-          📢 群組廣播<div style="font-size:10px;font-weight:500;margin-top:3px;opacity:0.7">推送給所有好友</div>
+          📢 廣播<div style="font-size:10px;font-weight:500;margin-top:3px;opacity:0.7">推送給所有好友</div>
         </button>
-        <button id="notify-target-personal" onclick="setNotifyTarget('personal')"
+        <button id="notify-target-group" onclick="setNotifyTarget('group')"
           style="flex:1;padding:10px;border-radius:14px;border:2px solid var(--border);background:var(--card);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">
-          👤 個人通知<div style="font-size:10px;font-weight:500;margin-top:3px;opacity:0.7">推送給指定成員</div>
+          👥 群組<div style="font-size:10px;font-weight:500;margin-top:3px;opacity:0.7">推送到指定群組</div>
         </button>
       </div>
-      <!-- 個人通知目標（只在個人模式顯示）-->
-      <div id="personal-target-wrap" style="display:none;margin-top:10px">
-        <div style="font-size:11px;color:var(--text2);margin-bottom:6px">選擇要通知的成員：</div>
-        <div id="personal-member-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <!-- 群組 ID 輸入（只在群組模式顯示）-->
+      <div id="group-id-wrap" style="display:none">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:6px">🔑 群組 ID</div>
+        <input id="line-group-id" placeholder="貼上群組 ID（在群組輸入 /id 取得）"
+          style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:12px;font-family:inherit;background:var(--bg);color:var(--text);outline:none"
+          onchange="saveGroupId()">
+        <div style="font-size:10px;color:var(--text2);margin-top:5px">在 LINE 群組輸入 <b>/id</b>，官方帳號會自動回覆群組 ID</div>
       </div>
     </div>
 
@@ -1013,7 +1016,7 @@ let lineSettings = load('cute_line_settings', {
   token: 'oOWLDuBPxEWRD4wZ8WRXLmGT5UocMFfXh/7To+7a7aOcymjyC+zofHMaQWxOtL9ku7paEnDgeEA6d3XKdlluPuibDoui9aG3b9CpuCEaShlUmVeogFDyEsuvkhC5SizffO62GXagEV0PGxQIqivABgdB04t89/1O/w1cDnyilFU=',
   groupName: '家庭通知記事本',
   notifyTarget: 'broadcast',
-  personalMembers: [],
+  groupId: '',
   notifyExpense: true,
   notifyCard: true,
   notifySummary: false,
@@ -1032,24 +1035,14 @@ function initLineUI() {
   // Update target buttons
   const target = lineSettings.notifyTarget || 'broadcast';
   const btnB = document.getElementById('notify-target-broadcast');
-  const btnP = document.getElementById('notify-target-personal');
-  if (btnB && btnP) {
-    const activeStyle = 'border-color:#06C755;background:rgba(6,199,85,0.1);color:#06C755;';
-    const inactiveStyle = 'border-color:var(--border);background:var(--card);color:var(--text2);';
-    btnB.style.cssText = btnB.style.cssText + (target==='broadcast' ? activeStyle : inactiveStyle);
-    btnP.style.cssText = btnP.style.cssText + (target==='personal' ? activeStyle : inactiveStyle);
-  }
-  const personalWrap = document.getElementById('personal-target-wrap');
-  if (personalWrap) personalWrap.style.display = target==='personal' ? 'block' : 'none';
-  // Render personal member chips
-  const memberList = document.getElementById('personal-member-list');
-  if (memberList && target==='personal') {
-    const selected = lineSettings.personalMembers || [];
-    memberList.innerHTML = members.filter(m=>m.name!=='共同').map(m=>{
-      const isOn = selected.includes(m.name);
-      return `<button onclick="togglePersonalMember('${m.name}')" style="padding:6px 14px;border-radius:20px;border:2px solid ${isOn?m.color:'var(--border)'};background:${isOn?m.color+'22':'transparent'};color:${isOn?m.color:'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">${m.name}</button>`;
-    }).join('');
-  }
+  const btnG = document.getElementById('notify-target-group');
+  const green = '#06C755';
+  if (btnB) { btnB.style.borderColor = target==='broadcast'?green:'var(--border)'; btnB.style.background = target==='broadcast'?'rgba(6,199,85,0.1)':'var(--card)'; btnB.style.color = target==='broadcast'?green:'var(--text2)'; }
+  if (btnG) { btnG.style.borderColor = target==='group'?green:'var(--border)'; btnG.style.background = target==='group'?'rgba(6,199,85,0.1)':'var(--card)'; btnG.style.color = target==='group'?green:'var(--text2)'; }
+  const groupWrap = document.getElementById('group-id-wrap');
+  if (groupWrap) groupWrap.style.display = target==='group' ? 'block' : 'none';
+  const groupIdEl = document.getElementById('line-group-id');
+  if (groupIdEl) groupIdEl.value = lineSettings.groupId || '';
 }
 
 function setNotifyTarget(target) {
@@ -1058,13 +1051,9 @@ function setNotifyTarget(target) {
   initLineUI();
 }
 
-function togglePersonalMember(name) {
-  if (!lineSettings.personalMembers) lineSettings.personalMembers = [];
-  const idx = lineSettings.personalMembers.indexOf(name);
-  if (idx >= 0) lineSettings.personalMembers.splice(idx, 1);
-  else lineSettings.personalMembers.push(name);
-  save('cute_line_settings', lineSettings);
-  initLineUI();
+function saveGroupId() {
+  const el = document.getElementById('line-group-id');
+  if (el) { lineSettings.groupId = el.value.trim(); save('cute_line_settings', lineSettings); showToast('✅ 群組 ID 已儲存'); }
 }
 
 function toggleLineNotify() {
@@ -1090,7 +1079,7 @@ const GAS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbyM83FlWdf2nB0NdbLE
 async function sendLineData(data) {
   if (!lineSettings.enabled) return false;
   const target = lineSettings.notifyTarget || 'broadcast';
-  const payload = { ...data, target, personalMembers: lineSettings.personalMembers || [] };
+  const payload = { ...data, target, groupId: lineSettings.groupId || '' };
   try {
     await fetch(GAS_WEBHOOK, {
       method: 'POST',
@@ -1098,11 +1087,11 @@ async function sendLineData(data) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    const label = target==='personal' ? '個人通知' : '群組廣播';
-    addLineLog('✅', (data.name||data.type||'通知')+' → '+label, '已送出');
+    const label = target==='group' ? '群組通知' : '廣播';
+    addLineLog('✅', (data.name||data.type||'通知') + ' → ' + label, '已送出');
     return true;
   } catch(e) {
-    addLineLog('❌', JSON.stringify(data).slice(0,40), '失敗：' + e.message);
+    addLineLog('❌', (data.name||data.type||'通知'), '失敗：' + e.message);
     return false;
   }
 }
